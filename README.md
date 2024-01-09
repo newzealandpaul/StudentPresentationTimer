@@ -22,11 +22,11 @@ The countdown defaults can be adjusted either by editing the source file or by a
 - The maximum countdown limit is 59:59 (59 minutes and 59 seconds).
 - It is optimized for Chromium-based browsers (Google Chrome, Microsoft Edge, and Brave) and Firefox. It also works on desktop Safari but on occasion, the beeping does not function.
 - For mobile devices, it works optimally in landscape orientation. However, for iOS devices, the audio beeping functionality does not work.
-- It loads three external Javascript dependencies from the [unpkg.com](unpkg.com) content delivery network.
+- It loads three external Javascript dependencies from the [unpkg.com](https://unpkg.com) content delivery network.
 
 ## Online Demonstration & Tool Usage
 
-Feel free to use this [demo](https://steady-wisp-fe3562.netlify.app/timer.html?time=10:00). This timer defaults to 10:00 minutes. You can adjust the timer by changing the URL.
+If you don't want to host this application yourself, you can use the [demo](https://steady-wisp-fe3562.netlify.app/timer.html?time=10:00). This timer defaults to 10:00 minutes. You can adjust the timer by changing the URL.
 
 ## Development and Testing
 
