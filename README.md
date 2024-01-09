@@ -6,7 +6,9 @@ The Student Presentation Timer is a simple HTML/JS countdown timer designed spec
 
 ## Description
 
-The timer application counts down in an MM:SS (e.g., 10:00) format from a time specified by the user. It has been incorporated with several features to encourage students not to exceed their allocated time:
+The timer application counts down in an MM:SS (e.g., 10:00) format from a time specified by the user. It starts paused and to begin the countdown click on the page.
+
+It has been incorporated with several features to encourage students not to exceed their allocated time:
 
 - It visually alerts users by switching the color scheme to a flashing red and black when only 30 seconds are remaining (default setting).
 - A single beep is activated when there are only 10 seconds left.
