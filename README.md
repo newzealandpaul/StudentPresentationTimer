@@ -2,6 +2,8 @@
 
 The Student Presentation Timer is a simple HTML/JS countdown timer designed specifically for universities to monitor student presentations and ensure every student gets an equal speaking time, featuring features like color scheme change, distinct beep sounds, and a customizable countdown period.
 
+![Image of timer paused at 00:31](https://raw.githubusercontent.com/newzealandpaul/StudentPresentationTimer/cd92a4c55258a6c67830f1877631edae9e22df77/screenshots/paused.png)
+
 ## Description
 
 The timer application counts down in an MM:SS (e.g., 10:00) format from a time specified by the user. It has been incorporated with several features to encourage students not to exceed their allocated time:
