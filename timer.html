@@ -4,7 +4,10 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="author" content="https://github.com/newzealandpaul/">
+    <meta name="description" content="The Student Presentation Timer is a simple HTML/JS countdown timer designed specifically for universities to monitor student presentations and ensure every student gets an equal speaking time.">
     <title>Student Presentation Countdown Timer</title>
+    
     <style>
         html,
         body {
@@ -77,15 +80,10 @@
             color: #00FF00;
         }
     </style>
-
-
 </head>
 
 <body>
     <div id="root"></div>
-    <!-- Orginal Source, downrampled and trimmed: https://www.soundjay.com/beep-sounds-1.html Terms: "You are allowed to use the sounds on our website free of charge and royalty free in your projects " -->
-    <audio id="beep"
-        src="data:audio/mp3;base64,SUQzAwAAAAAAFgAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/4yDEABAQBmlTQRgA/BDCIAQOQ/BCHy5+CEEOUdicEAQBAEHFwfPwf5Q5/BwMf9Rz+IAQBAH3/rBDp+UBD+XPy4f//P8o4uD7yeD7+pXYOJfYTsV+0AIl+QclBwF4GrgJJWEYDmkENP/jIsQaGrPe0AGGmABpMnTW5//X6H3QWmijWXSAd1E+tOnw2AyS6xBv1f796lTLvtOoMh/xQbV9vFzJ1a+3ppp//WYlIvf++Mqa16tTfQb//XSWS5r6u3VvSIC9qqUEC0AOUl0wE+v/RP/jIMQLFzty4l/NaAKQNzNukZBXAFup9+gv7u43ou99SAkTRkFf/XNQVog//+o4j/NxUMlIK6RUSaNM6XSsT1EXRs///an93Gxr+gUT72ZSRkslv////X//+MQ2/6fSCAkIDkAUEAPm/+MixAkWW3LaXpFPpn/RRIgoyS6aAr4K8btWvnUrazVaI5jHHulSSGg7P//pB/X///J/KAwprKiAMFt40sFQ7///Q6xrKFBqaqTpxw31szHwZ//+v/T//8LFv+R9NRAPmVv4rjlH6/zB/+MgxAsV63MCXlIVBuC0ar9UBkQC9uayT8ylABzEe3Qw8mDMtX5i/zQHDv/06kZr/wqzGXVDB8220qW///16VIhbdnRroNUZN7Rb////8//p6JUF8LL9fp9KDAtQNualFJXnX/qIkeT/4yLEDhcrauZegdWmk92cug8Palch5O2SZazihueyjJY3Q9ZB0Ufv9ajYG25V//pxCX/qA0nffOAuk1juLxz///6silQi7eK5L1OUiUQG3///9v//qHrf9PkfbRLY0Rdgtjk3570Uww//4yDEDRcLcwJeUgumdzDKtPeFACCn+SGOhjOeRD1VRkfJBQ1X//WCkn/9H3+xV2qPmSAwPT76hS7QgzDgRI0d///v2qJgEvrOGAmQg0Pi6AL////7///h0H//yKqTaohS1mQQoVtx8v/jIsQLFFtq9l9JEANEVFMwqGVBUauOXHJSRCprgQqUsCFKY0pUAgJ/83/qWYylCgQp/+pd6Gf/R//M6hTBZS////9S/+pnUrBjGf///////mAhtQgAARJBH4yPjX0T8OqJqj/kYptP9f/jIMQVFeNygLOBKAAokVv/9xVJi//6O4x4qxdaf/3HGGiIqPQUiIp9HSY3/9TEQPDhcUFA+hQGMv+n///CIo4mhowpA64gLxMYoifOrs61TEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVV/+MixBgAAANIAcAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"></audio>
     <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -103,7 +101,13 @@
         const CONSTANT_BEEP_THRESHOLD_STRING = "00:00";  // Start beeping every CONSTANT_BEEP_INTERVAL seconds when timer is less than this
         const CONSTANT_BEEP_INTERVAL = "00:10"; // How often to beep when timer is less than CONSTANT_BEEP_THRESHOLD
         const DOUBLE_BEEP_THRESHOLD = "00:00"; // When to start double beeping
-        const BEEP_SPACING_MS = 500 // Spacing between double beeps in milliseconds, auto adjusted for tick interval
+        
+        const BEEP_FREQ = 493.88 // Musical note G4
+        const BEEP_WAVE_TYPE = 2; // Sawtooth Wave
+        const BEEP_GAIN = 5; // Volume of beep
+        const BEEP_DURATION_MS = 500; // Duration of beep in milliseconds
+        const BEEP_SPACING_MS = 500 // Spacing between double beeps in milliseconds, auto adjusted for tick interval        
+        const BEEPS_N = 2; // Number of beeps to play when CONSTANT_BEEP_THRESHOLD is reached
 
         // END USER CONFIGURATION
 
@@ -135,9 +139,34 @@
         const TICK_INTERVAL = tickFromURL ? parseInt(tickFromURL) : DEFAULT_TICK_INTERVAL;
 
         // Speed up the audio relative to the tick interval
-        let beepEl = document.getElementById("beep");
-        beepEl.playbackRate = 1000 / TICK_INTERVAL;
-        const BEEP_SPACING_MS_REL  = BEEP_SPACING_MS * beepEl.playbackRate;
+        const REL_TICK = TICK_INTERVAL / 1000;
+        const BEEP_SPACING_MS_REL = BEEP_SPACING_MS * REL_TICK;
+        const BEEP_DURATION_REL = BEEP_DURATION_MS * REL_TICK;
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        function beep(n = 1) {
+
+            if (n == 0) return;
+
+            var oscillator = audioContext.createOscillator();
+            var gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            gainNode.gain.value = BEEP_GAIN; // Volume
+            oscillator.frequency.value = BEEP_FREQ // Musical note G4
+            oscillator.type = BEEP_WAVE_TYPE; // Sawtooth Wave
+
+            oscillator.start();
+            setTimeout(() => {
+                oscillator.stop();
+                setTimeout(() => {
+                    beep(n - 1);
+                }, BEEP_SPACING_MS_REL);
+            }, BEEP_DURATION_REL);
+        };
 
         class Timer extends React.Component {
             constructor(props) {
@@ -169,14 +198,14 @@
                 const { totalTime, elapsed } = this.state;
                 const timeLeft = totalTime - elapsed;
                 const beepEl = document.getElementById('beep');
-                console.log(timeLeft);
+                console.debug(timeLeft);
                 if ((timeLeft <= CONSTANT_BEEP_THRESHOLD_SECONDS && timeLeft % CONSTANT_BEEP_INTERVAL_SECONDS === 0) || timeLeft === FIRST_BEEP_SECONDS) {
                     if (timeLeft <= DOUBLE_BEEP_THRESHOLD_SECONDS) {
-                        console.log("double beep");
-                        beepEl.play();
-                        setTimeout(() => beepEl.cloneNode().play(), BEEP_SPACING_MS_REL);
+                        console.debug("Double/N Beeps");
+                        beep(BEEPS_N);
                     } else {
-                        beepEl.play();
+                        console.debug("Single Beep");
+                        beep();
                     }
                 }
             };
@@ -209,7 +238,6 @@
                     document.body.classList.remove('flashing');
                 }
 
-
                 return (
                     <div className="timer-container">
                         <div>
@@ -219,7 +247,6 @@
                     </div>
                 );
             }
-
         }
 
         ReactDOM.render(<Timer />, document.getElementById('root'));  
