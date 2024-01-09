@@ -2,7 +2,9 @@
 
 A simple HTML/JS timer with only a few CDN dependencies. The countdown can be adjusted by editing the source file or by the time query parameter *?time=10:00*.
 
-## Demo
+## Demo & Online Tool
+
+Feel free to use this [demo](https://steady-wisp-fe3562.netlify.app/timer.html?time=10:00).
 
 ## Acknowledgements
 
