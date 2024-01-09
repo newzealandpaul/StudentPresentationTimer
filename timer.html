@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Presentation Countdown Timer</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: black;
+            padding: 20px;
+            box-sizing: border-box;
+            color: #00FF00;
+            font-family: sans-serif;
+            margin: 0;
+        }
+
+        .timer-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .timer {
+            color: #00FF00;
+            font-size: 15vw;
+            /* set based on viewport width */
+            transition: color 0.2s, background-color 0.2s;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #root {
+            max-height: 100%;
+            max-width: 100%;
+            font-size: 50vmin;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .play-icon {
+            color: white;
+        }
+
+
+        @keyframes flash {
+
+            0%,
+            100% {
+                background-color: black;
+                color: red;
+            }
+
+            50% {
+                background-color: red;
+                color: black;
+            }
+        }
+
+        body.flashing {
+            animation: flash 1s infinite;
+            color: red;
+        }
+
+        body:not(.flashing) .timer {
+            color: #00FF00;
+        }
+    </style>
+
+
+</head>
+
+<body>
+    <div id="root"></div>
+    <!-- Orginal Source, downrampled and trimmed: https://www.soundjay.com/beep-sounds-1.html Terms: "You are allowed to use the sounds on our website free of charge and royalty free in your projects " -->
+    <audio id="beep"
+        src="data:audio/mp3;base64,SUQzAwAAAAAAFgAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/4yDEABAQBmlTQRgA/BDCIAQOQ/BCHy5+CEEOUdicEAQBAEHFwfPwf5Q5/BwMf9Rz+IAQBAH3/rBDp+UBD+XPy4f//P8o4uD7yeD7+pXYOJfYTsV+0AIl+QclBwF4GrgJJWEYDmkENP/jIsQaGrPe0AGGmABpMnTW5//X6H3QWmijWXSAd1E+tOnw2AyS6xBv1f796lTLvtOoMh/xQbV9vFzJ1a+3ppp//WYlIvf++Mqa16tTfQb//XSWS5r6u3VvSIC9qqUEC0AOUl0wE+v/RP/jIMQLFzty4l/NaAKQNzNukZBXAFup9+gv7u43ou99SAkTRkFf/XNQVog//+o4j/NxUMlIK6RUSaNM6XSsT1EXRs///an93Gxr+gUT72ZSRkslv////X//+MQ2/6fSCAkIDkAUEAPm/+MixAkWW3LaXpFPpn/RRIgoyS6aAr4K8btWvnUrazVaI5jHHulSSGg7P//pB/X///J/KAwprKiAMFt40sFQ7///Q6xrKFBqaqTpxw31szHwZ//+v/T//8LFv+R9NRAPmVv4rjlH6/zB/+MgxAsV63MCXlIVBuC0ar9UBkQC9uayT8ylABzEe3Qw8mDMtX5i/zQHDv/06kZr/wqzGXVDB8220qW///16VIhbdnRroNUZN7Rb////8//p6JUF8LL9fp9KDAtQNualFJXnX/qIkeT/4yLEDhcrauZegdWmk92cug8Palch5O2SZazihueyjJY3Q9ZB0Ufv9ajYG25V//pxCX/qA0nffOAuk1juLxz///6silQi7eK5L1OUiUQG3///9v//qHrf9PkfbRLY0Rdgtjk3570Uww//4yDEDRcLcwJeUgumdzDKtPeFACCn+SGOhjOeRD1VRkfJBQ1X//WCkn/9H3+xV2qPmSAwPT76hS7QgzDgRI0d///v2qJgEvrOGAmQg0Pi6AL////7///h0H//yKqTaohS1mQQoVtx8v/jIsQLFFtq9l9JEANEVFMwqGVBUauOXHJSRCprgQqUsCFKY0pUAgJ/83/qWYylCgQp/+pd6Gf/R//M6hTBZS////9S/+pnUrBjGf///////mAhtQgAARJBH4yPjX0T8OqJqj/kYptP9f/jIMQVFeNygLOBKAAokVv/9xVJi//6O4x4qxdaf/3HGGiIqPQUiIp9HSY3/9TEQPDhcUFA+hQGMv+n///CIo4mhowpA64gLxMYoifOrs61TEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVV/+MixBgAAANIAcAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"></audio>
+    <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+
+        // USER CONFIGURATION
+
+        const DEFAULT_TIME = "00:31"; // Default start time
+        const DEFAULT_TICK_INTERVAL = 1000; // How often to update timer (1000ms = 1 second, change to speed up for dev purposes)
+
+        const REDFLASH_THRESHOLD_STRING = "00:30"; // When to start flashing red
+
+        const FIRST_BEEP_STRING = "00:10"; // When the first beep sounds
+        const CONSTANT_BEEP_THRESHOLD_STRING = "00:00";  // Start beeping every CONSTANT_BEEP_INTERVAL seconds when timer is less than this
+        const CONSTANT_BEEP_INTERVAL = "00:10"; // How often to beep when timer is less than CONSTANT_BEEP_THRESHOLD
+        const DOUBLE_BEEP_THRESHOLD = "00:00"; // When to start double beeping
+        const BEEP_SPACING_MS = 500 // Spacing between double beeps in milliseconds, auto adjusted for tick interval
+
+        // END USER CONFIGURATION
+
+        // Parsing times, alert if invalid
+        function parseThreshold(thresholdString) {
+            if (!/^\d{2}:\d{2}$/.test(thresholdString)) {
+                const errorMsg = "Invalid time: " + thresholdString + ". Expecting \"MM:SS\"";
+                console.error(errorMsg);
+                alert(errorMsg);
+                return NaN;
+            }
+
+            const split = thresholdString.split(':');
+            return parseInt(split[0], 10) * 60 + parseInt(split[1], 10);
+        }
+
+        const REDFLASH_THRESHOLD_SECONDS = parseThreshold(REDFLASH_THRESHOLD_STRING);
+        const FIRST_BEEP_SECONDS = parseThreshold(FIRST_BEEP_STRING);
+        const CONSTANT_BEEP_THRESHOLD_SECONDS = parseThreshold(CONSTANT_BEEP_THRESHOLD_STRING);
+        const DOUBLE_BEEP_THRESHOLD_SECONDS = parseThreshold(DOUBLE_BEEP_THRESHOLD);
+        const CONSTANT_BEEP_INTERVAL_SECONDS = parseThreshold(CONSTANT_BEEP_INTERVAL);
+
+        // Get time from URL
+        let params = new URLSearchParams(window.location.search);
+        let timeFromUrl = params.get('time');
+        let timerInput = timeFromUrl ? timeFromUrl : DEFAULT_TIME;
+
+        let tickFromURL = params.get('tick');
+        const TICK_INTERVAL = tickFromURL ? parseInt(tickFromURL) : DEFAULT_TICK_INTERVAL;
+
+        // Speed up the audio relative to the tick interval
+        let beepEl = document.getElementById("beep");
+        beepEl.playbackRate = 1000 / TICK_INTERVAL;
+        const BEEP_SPACING_MS_REL  = BEEP_SPACING_MS * beepEl.playbackRate;
+
+        class Timer extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = {
+                    totalTime: parseThreshold(timerInput),
+                    elapsed: 0,
+                    running: false
+                };
+            }
+
+            componentDidMount() {
+                document.addEventListener('click', this.toggleRunning);
+            }
+
+            componentWillUnmount() {
+                clearInterval(this.interval);
+                document.removeEventListener('click', this.toggleRunning);
+            }
+
+            tick = () => {
+                if (this.state.running) {
+                    this.setState((prevState) => ({ elapsed: prevState.elapsed + 1 }));
+                    this.updateBeep();
+                }
+            };
+
+            updateBeep = () => {
+                const { totalTime, elapsed } = this.state;
+                const timeLeft = totalTime - elapsed;
+                const beepEl = document.getElementById('beep');
+                console.log(timeLeft);
+                if ((timeLeft <= CONSTANT_BEEP_THRESHOLD_SECONDS && timeLeft % CONSTANT_BEEP_INTERVAL_SECONDS === 0) || timeLeft === FIRST_BEEP_SECONDS) {
+                    if (timeLeft <= DOUBLE_BEEP_THRESHOLD_SECONDS) {
+                        console.log("double beep");
+                        beepEl.play();
+                        setTimeout(() => beepEl.cloneNode().play(), BEEP_SPACING_MS_REL);
+                    } else {
+                        beepEl.play();
+                    }
+                }
+            };
+
+            toggleRunning = () => {
+                this.setState((prevState) => ({
+                    running: !prevState.running
+                }), () => {
+                    if (this.state.running) {
+                        this.interval = setInterval(this.tick, TICK_INTERVAL);
+                    } else {
+                        clearInterval(this.interval);
+                    }
+                });
+            };
+
+            formatTime = (timerSeconds) => {
+                const absSeconds = Math.abs(timerSeconds);
+                const minutes = Math.floor(absSeconds / 60);
+                const seconds = absSeconds % 60;
+                const sign = timerSeconds < 0 ? "-" : "";
+                return `${sign}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            };
+            render() {
+                const { totalTime, elapsed, running } = this.state;
+                const timeLeft = totalTime - elapsed;
+                if (timeLeft <= REDFLASH_THRESHOLD_SECONDS) {
+                    document.body.classList.add('flashing');
+                } else {
+                    document.body.classList.remove('flashing');
+                }
+
+
+                return (
+                    <div className="timer-container">
+                        <div>
+                            {this.formatTime(timeLeft)}
+                        </div>
+                        {running ? null : <div className='play-icon'>||</div>}
+                    </div>
+                );
+            }
+
+        }
+
+        ReactDOM.render(<Timer />, document.getElementById('root'));  
+    </script>
+</body>
+
+</html>
