@@ -155,11 +155,12 @@
         const BEEP_SPACING_MS_REL = BEEP_SPACING_MS * REL_TICK;
         const BEEP_DURATION_REL = BEEP_DURATION_MS * REL_TICK;
 
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
         function beep(n = 1) {
-
             if (n == 0) return;
+            
+            // Rules for audio https://developer.chrome.com/blog/autoplay/#webaudio
+            var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            console.log("Audio Context: " + audioContext.state);
 
             var oscillator = audioContext.createOscillator();
             var gainNode = audioContext.createGain();
