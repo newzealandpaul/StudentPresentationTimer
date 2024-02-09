@@ -108,6 +108,7 @@
         ];
 
         const DEFAULT_TIME = "10:00"; // Default start time
+        const STOP_TIME = "-01:00" // Default stop time, if null do not stop
         const DEFAULT_TICK_INTERVAL = 1000; // How often to update timer (1000ms = 1 second, change to speed up for dev purposes)
 
         const FIRST_BEEP_STRING = "00:30"; // When the first beep sounds
@@ -119,13 +120,23 @@
         const BEEP_WAVE_TYPE = 'sawtooth'; // Sawtooth Wave
         const BEEP_GAIN = 5; // Volume of beep
         const BEEP_DURATION_MS = 500; // Duration of beep in milliseconds
-        const BEEP_SPACING_MS = 500 // Spacing between double beeps in milliseconds, auto adjusted for tick interval        
+        const BEEP_SPACING_MS = 100 // Spacing between double beeps in milliseconds, auto adjusted for tick interval        
         const BEEPS_N = 2; // Number of beeps to play when CONSTANT_BEEP_THRESHOLD is reached
 
+        const SHOW_PAUSE=false; // Show pause icon when timer is stopped
         // END USER CONFIGURATION
 
         // Parsing times, alert if invalid
         function parseThreshold(thresholdString) {
+            if (thresholdString == null) {
+                return NaN;
+            }
+            // Check if negative, and remove the negative sign
+            if (thresholdString.startsWith('-')) {
+                var isNegative = true;
+                thresholdString = thresholdString.substring(1);
+            }
+
             if (!/^\d{2}:\d{2}$/.test(thresholdString)) {
                 const errorMsg = "Invalid time: " + thresholdString + ". Expecting \"MM:SS\"";
                 console.error(errorMsg);
@@ -134,13 +145,18 @@
             }
 
             const split = thresholdString.split(':');
-            return parseInt(split[0], 10) * 60 + parseInt(split[1], 10);
+            var seconds = parseInt(split[0], 10) * 60 + parseInt(split[1], 10);
+            if (isNegative) {
+                seconds = -seconds;
+            }
+            return seconds;
         }
 
         const FIRST_BEEP_SECONDS = parseThreshold(FIRST_BEEP_STRING);
         const CONSTANT_BEEP_THRESHOLD_SECONDS = parseThreshold(CONSTANT_BEEP_THRESHOLD_STRING);
         const DOUBLE_BEEP_THRESHOLD_SECONDS = parseThreshold(DOUBLE_BEEP_THRESHOLD);
         const CONSTANT_BEEP_INTERVAL_SECONDS = parseThreshold(CONSTANT_BEEP_INTERVAL);
+        const STOP_TIME_SECONDS = parseThreshold(STOP_TIME);
 
         // Get time from URL
         let params = new URLSearchParams(window.location.search);
@@ -237,6 +253,19 @@
                     this.setState((prevState) => ({ elapsed: prevState.elapsed + 1 }));
                     this.updateBeep();
                 }
+
+                if (STOP_TIME != null) {
+                    const { totalTime, elapsed } = this.state;
+                    const timeLeft = totalTime - elapsed;
+                    console.log("Time Left: " + timeLeft)
+
+                    if (timeLeft <= STOP_TIME_SECONDS ) {
+                        console.log("Stopping Timer");
+                        this.setState({ running: false });
+                        clearInterval(this.interval);
+                    }
+                }
+
             };
 
             updateBeep = () => {
@@ -281,7 +310,7 @@
                         <div id="timer">
                             {this.formatTime(this.state.totalTime - this.state.elapsed)}
                         </div>
-                        {!this.state.running && <div className="play-icon">||</div>}
+                        {(!this.state.running && SHOW_PAUSE)&& <div className="play-icon">||</div>}
                     </div>
                 );
             }
