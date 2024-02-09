@@ -5,9 +5,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="author" content="https://github.com/newzealandpaul/">
-    <meta name="description" content="The Student Presentation Timer is a simple HTML/JS countdown timer designed specifically for universities to monitor student presentations and ensure every student gets an equal speaking time.">
+    <meta name="description"
+        content="The Student Presentation Timer is a simple HTML/JS countdown timer designed specifically for universities to monitor student presentations and ensure every student gets an equal speaking time.">
     <title>Student Presentation Countdown Timer</title>
-    
+
     <style>
         html,
         body {
@@ -71,13 +72,20 @@
             }
         }
 
-        body.flashing {
-            animation: flash 1s infinite;
-            color: red;
+        .flashing-text {
+            animation: flashText 1s infinite;
         }
 
-        body:not(.flashing) .timer {
-            color: #00FF00;
+        @keyframes flashText {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
         }
     </style>
 </head>
@@ -92,16 +100,21 @@
 
         // USER CONFIGURATION
 
-        const DEFAULT_TIME = "00:31"; // Default start time
+        // Define timer behavior with default configuration as the entry
+        const TIMER_TEXT_CONFIG = [
+            { time: "START", backgroundColor: "black", textColor: "white", flashing: false },
+            { time: "01:00", backgroundColor: "black", textColor: "red", flashing: false },
+            { time: "00:10", backgroundColor: "black", textColor: "red", flashing: false }
+        ];
+
+        const DEFAULT_TIME = "10:00"; // Default start time
         const DEFAULT_TICK_INTERVAL = 1000; // How often to update timer (1000ms = 1 second, change to speed up for dev purposes)
 
-        const REDFLASH_THRESHOLD_STRING = "00:30"; // When to start flashing red
-
-        const FIRST_BEEP_STRING = "00:10"; // When the first beep sounds
+        const FIRST_BEEP_STRING = "00:30"; // When the first beep sounds
         const CONSTANT_BEEP_THRESHOLD_STRING = "00:00";  // Start beeping every CONSTANT_BEEP_INTERVAL seconds when timer is less than this
         const CONSTANT_BEEP_INTERVAL = "00:10"; // How often to beep when timer is less than CONSTANT_BEEP_THRESHOLD
         const DOUBLE_BEEP_THRESHOLD = "00:00"; // When to start double beeping
-        
+
         const BEEP_FREQ = 493.88 // Musical note G4
         const BEEP_WAVE_TYPE = 2; // Sawtooth Wave
         const BEEP_GAIN = 5; // Volume of beep
@@ -124,7 +137,6 @@
             return parseInt(split[0], 10) * 60 + parseInt(split[1], 10);
         }
 
-        const REDFLASH_THRESHOLD_SECONDS = parseThreshold(REDFLASH_THRESHOLD_STRING);
         const FIRST_BEEP_SECONDS = parseThreshold(FIRST_BEEP_STRING);
         const CONSTANT_BEEP_THRESHOLD_SECONDS = parseThreshold(CONSTANT_BEEP_THRESHOLD_STRING);
         const DOUBLE_BEEP_THRESHOLD_SECONDS = parseThreshold(DOUBLE_BEEP_THRESHOLD);
@@ -178,14 +190,47 @@
                 };
             }
 
+            applyConfig = () => {
+                const { totalTime, elapsed } = this.state;
+                const timeLeft = totalTime - elapsed;
+
+                // Find a time-specific configuration based on the current time left
+                let config = (
+                    TIMER_TEXT_CONFIG.filter(config => config.time != "START")
+                    .find(config => parseThreshold(config.time) === timeLeft)
+                );
+
+                // If no time-specific configuration is found, use the "START" configuration (which is default)
+                let startConfig = TIMER_TEXT_CONFIG.find(config => config.time === "START");
+                if (elapsed == 0) {
+                    config = startConfig;
+                }
+
+                if (config) {
+                    document.body.style.backgroundColor = config.backgroundColor;
+                    document.body.style.color = config.textColor;
+                    const timerElement = document.getElementById('timer');
+                    if (config.flashing) {
+                        timerElement.classList.add('flashing-text');
+                    } else {
+                        timerElement.classList.remove('flashing-text');
+                    }
+                }
+            };
+
             componentDidMount() {
+                this.applyConfig(); // Apply default configuration on mount
                 document.addEventListener('click', this.toggleRunning);
             }
-
             componentWillUnmount() {
                 clearInterval(this.interval);
                 document.removeEventListener('click', this.toggleRunning);
             }
+
+            componentDidUpdate() {
+                this.applyConfig();
+            }
+
 
             tick = () => {
                 if (this.state.running) {
@@ -229,24 +274,18 @@
                 const sign = timerSeconds < 0 ? "-" : "";
                 return `${sign}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             };
-            render() {
-                const { totalTime, elapsed, running } = this.state;
-                const timeLeft = totalTime - elapsed;
-                if (timeLeft <= REDFLASH_THRESHOLD_SECONDS) {
-                    document.body.classList.add('flashing');
-                } else {
-                    document.body.classList.remove('flashing');
-                }
 
+            render() {
                 return (
                     <div className="timer-container">
-                        <div>
-                            {this.formatTime(timeLeft)}
+                        <div id="timer">
+                            {this.formatTime(this.state.totalTime - this.state.elapsed)}
                         </div>
-                        {running ? null : <div className='play-icon'>||</div>}
+                        {!this.state.running && <div className="play-icon">||</div>}
                     </div>
                 );
             }
+
         }
 
         ReactDOM.render(<Timer />, document.getElementById('root'));  
