@@ -40,6 +40,34 @@
             text-align: center;
         }
 
+        #minute {
+            display: inline-block;
+            width: 1em;
+            text-align: center;
+            line-height: 1em;
+        }
+
+        #second {
+            display: inline-block;
+            width: 1em;
+            text-align: center;
+            line-height: 1em;
+        }
+
+
+        #separator {
+            display: inline-block;
+            width: 0.6em;
+            text-align: center;
+            line-height: 1em;
+        }
+        .running, .paused {
+            position: relative;
+            vertical-align:top; 
+
+
+        }
+
         .hidden {
             display: none;
         }
@@ -87,11 +115,22 @@
                 opacity: 0;
             }
         }
+
+        #paused {
+            position: fixed;
+            z-index: 2;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: rgba(0, 0, 0, .6);
+        }
     </style>
 </head>
 
 <body>
     <div id="root"></div>
+    <div id="paused"></div>
     <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -123,7 +162,7 @@
         const BEEP_SPACING_MS = 100 // Spacing between double beeps in milliseconds, auto adjusted for tick interval        
         const BEEPS_N = 2; // Number of beeps to play when CONSTANT_BEEP_THRESHOLD is reached
 
-        const SHOW_PAUSE=false; // Show pause icon when timer is stopped
+        const SHOW_PAUSE = false; // Show pause icon when timer is stopped
         // END USER CONFIGURATION
 
         // Parsing times, alert if invalid
@@ -173,7 +212,7 @@
 
         function beep(n = 1) {
             if (n == 0) return;
-            
+
             // Rules for audio https://developer.chrome.com/blog/autoplay/#webaudio
             var audioContext = new (window.AudioContext || window.webkitAudioContext)();
             console.log("Audio Context: " + audioContext.state);
@@ -214,7 +253,7 @@
                 // Find a time-specific configuration based on the current time left
                 let config = (
                     TIMER_TEXT_CONFIG.filter(config => config.time != "START")
-                    .find(config => parseThreshold(config.time) === timeLeft)
+                        .find(config => parseThreshold(config.time) === timeLeft)
                 );
 
                 // If no time-specific configuration is found, use the "START" configuration (which is default)
@@ -259,10 +298,9 @@
                     const timeLeft = totalTime - elapsed;
                     console.log("Time Left: " + timeLeft)
 
-                    if (timeLeft <= STOP_TIME_SECONDS ) {
+                    if (timeLeft <= STOP_TIME_SECONDS) {
                         console.log("Stopping Timer");
-                        this.setState({ running: false });
-                        clearInterval(this.interval);
+                        this.stopRunning();
                     }
                 }
 
@@ -285,40 +323,71 @@
             };
 
             toggleRunning = () => {
-                this.setState((prevState) => ({
-                    running: !prevState.running
-                }), () => {
-                    if (this.state.running) {
-                        this.interval = setInterval(this.tick, TICK_INTERVAL);
-                    } else {
-                        clearInterval(this.interval);
-                    }
-                });
+                if (this.state.running) {
+                    this.stopRunning();
+                } else {
+                    this.resumeRunning();
+                }
             };
 
-            formatTime = (timerSeconds) => {
+            stopRunning = () => {
+                this.setState({ running: false });
+                clearInterval(this.interval);
+                const pausedElement = document.getElementById('paused');
+                pausedElement.style.display = "block";
+            };
+
+            resumeRunning = () => {
+                this.setState({ running: true });
+                this.interval = setInterval(this.tick, TICK_INTERVAL);
+                const pausedElement = document.getElementById('paused');
+                pausedElement.style.display = "none";
+            };
+
+            minuteTime = (timerSeconds) => {
                 const absSeconds = Math.abs(timerSeconds);
                 const minutes = Math.floor(absSeconds / 60);
+                return minutes;
+            };
+
+            secondsTime = (timerSeconds) => {
+                const absSeconds = Math.abs(timerSeconds);
                 const seconds = absSeconds % 60;
+                return seconds;
+            };
+
+            signTime = (timerSeconds) => {
                 const sign = timerSeconds < 0 ? "-" : "";
-                return `${sign}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                console.log(timerSeconds);
+                return sign;
+            };
+
+            separatorTime = (timerSeconds) => {
+                const separator = this.state.running ? ":" : ":";
+                return separator;
             };
 
             render() {
+                let time = this.state.totalTime - this.state.elapsed;
                 return (
                     <div className="timer-container">
                         <div id="timer">
-                            {this.formatTime(this.state.totalTime - this.state.elapsed)}
+                            <span id="sign">{this.signTime(time)}</span>
+                            <span id="minute">{this.minuteTime(time).toString().padStart(2, '0')}</span>
+                            <span id="separator" className={this.state.running ? 'running' : 'paused'}>{this.separatorTime(time)}</span>
+                            <span id="second">{this.secondsTime(time).toString().padStart(2, '0')}</span>
                         </div>
-                        {(!this.state.running && SHOW_PAUSE)&& <div className="play-icon">||</div>}
+                        {(!this.state.running && SHOW_PAUSE) && <div className="play-icon">||</div>}
                     </div>
                 );
             }
 
         }
 
-        ReactDOM.render(<Timer />, document.getElementById('root'));  
+        ReactDOM.render(<Timer />, document.getElementById('root'));
+
     </script>
+
 </body>
 
 </html>
