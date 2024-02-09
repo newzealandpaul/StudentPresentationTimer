@@ -100,7 +100,7 @@
 
         // USER CONFIGURATION
 
-        // Define timer behavior with default configuration as the entry
+        // Define timer behavior here
         const TIMER_TEXT_CONFIG = [
             { time: "START", backgroundColor: "black", textColor: "white", flashing: false },
             { time: "01:00", backgroundColor: "black", textColor: "red", flashing: false },
@@ -230,7 +230,6 @@
             componentDidUpdate() {
                 this.applyConfig();
             }
-
 
             tick = () => {
                 if (this.state.running) {
