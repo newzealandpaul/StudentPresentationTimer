@@ -5,7 +5,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="author" content="https://github.com/newzealandpaul/">
-    <meta name="description" content="The Student Presentation Timer is a simple HTML/JS countdown timer designed specifically for universities to monitor student presentations and ensure every student gets an equal speaking time.">
+    <meta name="description"
+        content="The Student Presentation Timer is a simple HTML/JS countdown timer designed specifically for universities to monitor student presentations and ensure every student gets an equal speaking time.">
     <meta name="keywords" content="UC, timer, presentation, student, university, college, v0.2">
     <title>Student Presentation Countdown Timer</title>
 
@@ -158,28 +159,31 @@
 
         // USER CONFIGURATION
 
-        // Define timer behavior here
-        const TIMER_TEXT_CONFIG = [
-            { time: "START", backgroundColor: "black", textColor: "white", flashing: false },
-            { time: "01:00", backgroundColor: "black", textColor: "red", flashing: false },
-            { time: "00:10", backgroundColor: "black", textColor: "red", flashing: false }
-        ];
+        const TIMER_CONFIGURATION = {
+            // Array of timer text configurations with background color, text color, and flashing state
+            timerAppearanceConfig: [
+                { time: "START", backgroundColor: "black", textColor: "white", flashing: false },
+                { time: "01:00", backgroundColor: "black", textColor: "red", flashing: false },
+                { time: "00:10", backgroundColor: "black", textColor: "red", flashing: false }
+            ],
+            defaultTime: "10:00", // DEFAULT_TIME - Default start time
+            stopTime: "-01:00",   // STOP_TIME - Default stop time, if null do not stop
+            tickInterval: 1000,   // DEFAULT_TICK_INTERVAL - How often to update timer (in milliseconds)
 
-        const DEFAULT_TIME = "10:00"; // Default start time
-        const STOP_TIME = "-01:00" // Default stop time, if null do not stop
-        const DEFAULT_TICK_INTERVAL = 1000; // How often to update timer (1000ms = 1 second, change to speed up for dev purposes)
+            beepConfig: {
+                firstBeepTime: "00:30", // FIRST_BEEP_STRING - When the first beep sounds
+                constantBeepThreshold: "00:00", // CONSTANT_BEEP_THRESHOLD_STRING - Start beeping constantly at this threshold
+                constantBeepInterval: "00:10",  // CONSTANT_BEEP_INTERVAL - How often to beep past threshold
+                doubleBeepThreshold: "00:00",   // DOUBLE_BEEP_THRESHOLD - When to start double beeping
 
-        const FIRST_BEEP_STRING = "00:30"; // When the first beep sounds
-        const CONSTANT_BEEP_THRESHOLD_STRING = "00:00";  // Start beeping every CONSTANT_BEEP_INTERVAL seconds when timer is less than this
-        const CONSTANT_BEEP_INTERVAL = "00:10"; // How often to beep when timer is less than CONSTANT_BEEP_THRESHOLD
-        const DOUBLE_BEEP_THRESHOLD = "00:00"; // When to start double beeping
-
-        const BEEP_FREQ = 493.88 // Musical note G4
-        const BEEP_WAVE_TYPE = 'sawtooth'; // Sawtooth Wave
-        const BEEP_GAIN = 5; // Volume of beep
-        const BEEP_DURATION_MS = 500; // Duration of beep in milliseconds
-        const BEEP_SPACING_MS = 100 // Spacing between double beeps in milliseconds, auto adjusted for tick interval        
-        const BEEPS_N = 2; // Number of beeps to play when CONSTANT_BEEP_THRESHOLD is reached
+                frequency: 493.88,     // BEEP_FREQ - Frequency of beep (Musical note G4)
+                waveType: 'sawtooth',  // BEEP_WAVE_TYPE - Type of wave used for beep
+                gain: 5,               // BEEP_GAIN - Volume of beep
+                durationMs: 500,       // BEEP_DURATION_MS - Duration of beep in milliseconds
+                spacingMs: 100,        // BEEP_SPACING_MS - Spacing between double beeps in milliseconds
+                beepsN: 2              // BEEPS_N - Number of beeps to play at constant threshold
+            }
+        };
 
     </script>
     <script type="text/javascript">
@@ -210,24 +214,24 @@
             return seconds;
         }
 
-        const FIRST_BEEP_SECONDS = parseThreshold(FIRST_BEEP_STRING);
-        const CONSTANT_BEEP_THRESHOLD_SECONDS = parseThreshold(CONSTANT_BEEP_THRESHOLD_STRING);
-        const DOUBLE_BEEP_THRESHOLD_SECONDS = parseThreshold(DOUBLE_BEEP_THRESHOLD);
-        const CONSTANT_BEEP_INTERVAL_SECONDS = parseThreshold(CONSTANT_BEEP_INTERVAL);
-        const STOP_TIME_SECONDS = parseThreshold(STOP_TIME);
+        const FIRST_BEEP_SECONDS = parseThreshold(TIMER_CONFIGURATION.beepConfig.firstBeepTime);
+        const CONSTANT_BEEP_THRESHOLD_SECONDS = parseThreshold(TIMER_CONFIGURATION.beepConfig.constantBeepThreshold);
+        const DOUBLE_BEEP_THRESHOLD_SECONDS = parseThreshold(TIMER_CONFIGURATION.beepConfig.doubleBeepThreshold);
+        const CONSTANT_BEEP_INTERVAL_SECONDS = parseThreshold(TIMER_CONFIGURATION.beepConfig.constantBeepInterval);
+        const STOP_TIME_SECONDS = parseThreshold(TIMER_CONFIGURATION.stopTime);
 
         // Get time from URL
         const params = new URLSearchParams(window.location.search);
         const timeFromUrl = params.get('time');
-        const timerInput = timeFromUrl ? timeFromUrl : DEFAULT_TIME;
+        const timerInput = timeFromUrl ? timeFromUrl : TIMER_CONFIGURATION.defaultTime;
 
         const tickFromURL = params.get('tick');
-        const TICK_INTERVAL = tickFromURL ? parseInt(tickFromURL) : DEFAULT_TICK_INTERVAL;
+        const TICK_INTERVAL = tickFromURL ? parseInt(tickFromURL) : TIMER_CONFIGURATION.tickInterval;
 
         // Speed up the audio relative to the tick interval
         const REL_TICK = TICK_INTERVAL / 1000;
-        const BEEP_SPACING_MS_REL = BEEP_SPACING_MS * REL_TICK;
-        const BEEP_DURATION_REL = BEEP_DURATION_MS * REL_TICK;
+        const BEEP_SPACING_MS_REL = TIMER_CONFIGURATION.beepConfig.spacingMs * REL_TICK;
+        const BEEP_DURATION_REL = TIMER_CONFIGURATION.beepConfig.durationMs * REL_TICK;
 
         function beep(n = 1, context = null) {
             if (n == 0) return;
@@ -248,9 +252,9 @@
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
 
-            gainNode.gain.value = BEEP_GAIN; // Volume
-            oscillator.frequency.value = BEEP_FREQ // Musical note G4
-            oscillator.type = BEEP_WAVE_TYPE; // Sawtooth Wave
+            gainNode.gain.value = TIMER_CONFIGURATION.beepConfig.gain // Volume
+            oscillator.frequency.value = TIMER_CONFIGURATION.beepConfig.frequency // Musical note G4
+            oscillator.type = TIMER_CONFIGURATION.beepConfig.waveType; // Sawtooth Wave
 
             oscillator.start();
             setTimeout(() => {
@@ -287,10 +291,10 @@
                 // If no time-specific configuration is found, use the "START" configuration (which is default)
                 if (elapsed == 0) {
                     console.log("START config loaded");
-                    var config = TIMER_TEXT_CONFIG.find(c => c.time === "START");
+                    var config = TIMER_CONFIGURATION.timerAppearanceConfig.find(c => c.time === "START");
                 } else {
                     var config = (
-                        TIMER_TEXT_CONFIG.filter(c => c.time != "START")
+                        TIMER_CONFIGURATION.timerAppearanceConfig.filter(c => c.time != "START")
                             .find(c => parseThreshold(c.time) === timeLeft)
                     );
                 }
@@ -328,8 +332,17 @@
                 } else if (event.keyCode === 80) { // 'P' key
                     this.stopRunning();
                 } else if (event.keyCode === 66) { // 'B' key
+                    if (this.state.audioContext == null) {
+                        this.createAudioContext();
+                    }
                     beep(1, this.state.audioContext);
+                } else if (event.keyCode === 68) { // 'D' key, Hidden Double Beep
+                    if (this.state.audioContext == null) {
+                        this.createAudioContext();
+                    }
+                    beep(TIMER_CONFIGURATION.beepConfig.beepsN, this.state.audioContext);
                 }
+
             };
 
             resetTimer = () => {
@@ -359,7 +372,7 @@
                 }
                 this.applyConfig();
 
-                if (STOP_TIME != null) {
+                if (TIMER_CONFIGURATION.stopTime != null) {
                     console.log("Time Left: " + this.state.timeLeft)
                     if (this.state.timeLeft <= STOP_TIME_SECONDS) {
                         console.log("Stopping Timer");
@@ -375,7 +388,7 @@
                 if ((timeLeft <= CONSTANT_BEEP_THRESHOLD_SECONDS && timeLeft % CONSTANT_BEEP_INTERVAL_SECONDS === 0) || timeLeft === FIRST_BEEP_SECONDS) {
                     if (timeLeft <= DOUBLE_BEEP_THRESHOLD_SECONDS) {
                         console.debug("Double/N Beeps");
-                        beep(BEEPS_N, this.state.audioContext);
+                        beep(TIMER_CONFIGURATION.beepConfig.beepsN, this.state.audioContext);
                     } else {
                         console.debug("Single Beep");
                         beep(1, this.state.audioContext);
