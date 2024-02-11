@@ -7,7 +7,7 @@
     <meta name="author" content="https://github.com/newzealandpaul/">
     <meta name="description"
         content="The Student Presentation Timer is a simple HTML/JS countdown timer designed specifically for universities to monitor student presentations and ensure every student gets an equal speaking time.">
-    <meta name="keywords" content="UC, timer, presentation, student, university, college, v0.3">
+    <meta name="keywords" content="UC, timer, presentation, student, university, college, v0.4">
     <title>Student Presentation Countdown Timer</title>
 
     <style>
@@ -19,17 +19,19 @@
             justify-content: center;
             align-items: center;
             background-color: black;
-            padding: 20px;
             box-sizing: border-box;
             color: white;
             font-family: Helvetica, sans-serif;
             margin: 0;
+            padding: 0;
+
         }
 
         #root {
             max-height: 100%;
             max-width: 100%;
-            font-size: 50vmin;
+            width: 100%;
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -66,42 +68,31 @@
             border-radius: 5px;
         }
 
-
         .timer-container {
             width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
+            color: white;
+
         }
 
         .timer {
-            color: white;
-            font-size: 15vw;
-            /* set based on viewport width */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
             transition: color 0.2s, background-color 0.2s;
-            text-align: center;
+            font-size: calc(25vw + 10vh);
         }
 
-        #minute {
-            display: inline-block;
-            width: 1em;
+        #minute,
+        #second,
+        #separator,
+        #sign {
+            flex-grow: 0;
             text-align: center;
-            line-height: 1em;
-        }
-
-        #second {
-            display: inline-block;
-            width: 1em;
-            text-align: center;
-            line-height: 1em;
-        }
-
-
-        #separator {
-            display: inline-block;
-            width: 0.6em;
-            text-align: center;
-            line-height: 1em;
+            white-space: nowrap;
         }
 
         /* Same for now */
@@ -443,7 +434,7 @@
 
                 return (
                     <div className="timer-container" style={timerStyle}>
-                        <div id="timer">
+                        <div id="timer" className="timer">
                             <span id="sign">{sign}</span>
                             <span id="minute">{minutesTime}</span>
                             <span id="separator" className={this.state.running ? 'running' : 'paused'}>{separator}</span>
@@ -455,7 +446,7 @@
                                 <p>P: Pause / Stop</p>
                                 <p>R: Reset</p>
                                 <p>S: Set Time</p>
-                                    
+
                             </div>
                         </div>
                     </div>
