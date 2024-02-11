@@ -229,12 +229,18 @@
         const BEEP_SPACING_MS_REL = BEEP_SPACING_MS * REL_TICK;
         const BEEP_DURATION_REL = BEEP_DURATION_MS * REL_TICK;
 
-        function beep(n = 1) {
+        function beep(n = 1, context = null) {
             if (n == 0) return;
 
             // Rules for audio https://developer.chrome.com/blog/autoplay/#webaudio
-            var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            console.log("Audio Context: " + audioContext.state);
+            if (context == null) {
+                console.log("Creating new Audio Context")
+                var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } else {
+                var audioContext = context;
+            }
+
+            console.log("Audio Context State: " + audioContext.state);
 
             var oscillator = audioContext.createOscillator();
             var gainNode = audioContext.createGain();
@@ -270,7 +276,8 @@
                     fontColor: "white",
                     backgroundColor: "black",
                     flashing: false,
-                    timeString: timerInput
+                    timeString: timerInput,
+                    audioContext: null
                 };
             }
 
@@ -321,7 +328,7 @@
                 } else if (event.keyCode === 80) { // 'P' key
                     this.stopRunning();
                 } else if (event.keyCode === 66) { // 'B' key
-                    beep(1);
+                    beep(1, this.state.audioContext);
                 }
             };
 
@@ -368,10 +375,10 @@
                 if ((timeLeft <= CONSTANT_BEEP_THRESHOLD_SECONDS && timeLeft % CONSTANT_BEEP_INTERVAL_SECONDS === 0) || timeLeft === FIRST_BEEP_SECONDS) {
                     if (timeLeft <= DOUBLE_BEEP_THRESHOLD_SECONDS) {
                         console.debug("Double/N Beeps");
-                        beep(BEEPS_N);
+                        beep(BEEPS_N, this.state.audioContext);
                     } else {
                         console.debug("Single Beep");
-                        beep(1);
+                        beep(1, this.state.audioContext);
                     }
                 }
             };
@@ -390,8 +397,18 @@
             };
 
             resumeRunning = () => {
+                if (this.state.audioContext == null) {
+                    this.createAudioContext();
+                }
+
                 this.setState({ running: true });
                 this.interval = setInterval(this.tick, TICK_INTERVAL);
+            };
+
+            createAudioContext = () => {
+                var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                console.log("New Audio Context State: " + audioContext.state);
+                this.setState({ audioContext: audioContext });
             };
 
             render() {
