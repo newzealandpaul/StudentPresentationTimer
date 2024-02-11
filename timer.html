@@ -267,6 +267,7 @@
 
                 // If no time-specific configuration is found, use the "START" configuration (which is default)
                 if (elapsed == 0) {
+                    console.log("START config loaded");
                     var config = TIMER_TEXT_CONFIG.find(c => c.time === "START");
                 } else {
                     var config = (
@@ -274,7 +275,6 @@
                             .find(c => parseThreshold(c.time) === timeLeft)
                     );
                 }
-                console.log("Using START config");
 
                 if (config) {
                     this.state.textColor = config.textColor;
