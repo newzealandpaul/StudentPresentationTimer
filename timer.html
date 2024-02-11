@@ -61,9 +61,11 @@
             text-align: center;
             line-height: 1em;
         }
-        .running, .paused {
+
+        .running,
+        .paused {
             position: relative;
-            vertical-align:top; 
+            vertical-align: top;
         }
 
         .hidden {
@@ -122,12 +124,32 @@
             right: 0;
             background: rgba(0, 0, 0, .6);
         }
+
+        #paused #keyboard-shortcuts {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            color: #white;
+            padding: 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 
 <body>
     <div id="root"></div>
-    <div id="paused"></div>
+    <div id="paused">
+        <div id="keyboard-shortcuts">
+            <p>Space/Click: Start/Stop</p>
+            <p>r: Reset</p>
+            <p>s: Set Time</p>
+        </div>
+    </div>
+    <div id="keyboard-shortcuts" class="hidden">
+        <p>Space: Start/Stop</p>
+        <p>R: Reset</p>
+        <p>S: Set Time</p>
+    </div>
     <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -274,15 +296,49 @@
             componentDidMount() {
                 this.applyConfig(); // Apply default configuration on mount
                 document.addEventListener('click', this.toggleRunning);
+                document.addEventListener('keydown', this.handleKeyPress);
             }
             componentWillUnmount() {
                 clearInterval(this.interval);
                 document.removeEventListener('click', this.toggleRunning);
+                document.removeEventListener('keydown', this.handleKeyPress);
             }
 
             componentDidUpdate() {
                 this.applyConfig();
             }
+
+            handleKeyPress = (event) => {
+                if (event.keyCode === 32) { // Space bar key
+                    this.toggleRunning();
+                } else if (event.keyCode === 82) { // 'R' key
+                    this.resetTimer();
+                } else if (event.keyCode === 83) { // 'S' key
+                    this.setCustomTime();
+                }
+            };
+
+
+            resetTimer = () => {
+                this.stopRunning();
+                this.setState({ elapsed: 0 });
+            };
+
+            setCustomTime = () => {
+                this.stopRunning();
+                let newTime = prompt("Enter the new time in format MM:SS", this.formatTime(this.state.totalTime));
+                let parsedTime = parseThreshold(newTime);
+                if (!isNaN(parsedTime)) {
+                    this.setState({ totalTime: parsedTime, elapsed: 0 });
+                }
+            };
+
+            formatTime = (totalSeconds) => {
+                const minutes = Math.floor(Math.abs(totalSeconds) / 60);
+                const seconds = Math.abs(totalSeconds) % 60;
+                return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            };
+
 
             tick = () => {
                 if (this.state.running) {
@@ -331,14 +387,14 @@
                 this.setState({ running: false });
                 clearInterval(this.interval);
                 const pausedElement = document.getElementById('paused');
-                pausedElement.style.display = "block";
+                pausedElement.style.display = "block";  // The #keyboard-shortcuts will be shown since it's within #paused
             };
 
             resumeRunning = () => {
                 this.setState({ running: true });
                 this.interval = setInterval(this.tick, TICK_INTERVAL);
                 const pausedElement = document.getElementById('paused');
-                pausedElement.style.display = "none";
+                pausedElement.style.display = "none";  // The #keyboard-shortcuts will be hidden along with #paused
             };
 
             minuteTime = (timerSeconds) => {
