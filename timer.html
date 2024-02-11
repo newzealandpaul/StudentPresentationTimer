@@ -289,9 +289,11 @@
                 }
 
                 if (config) {
-                    this.state.textColor = config.textColor;
-                    this.state.backgroundColor = config.backgroundColor;
-                    this.state.flashing = config.flashing;
+                    this.setState({
+                        textColor: config.textColor,
+                        backgroundColor: config.backgroundColor,
+                        flashing: config.flashing
+                    });
                 }
             };
 
