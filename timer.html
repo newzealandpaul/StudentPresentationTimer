@@ -260,7 +260,7 @@
             setTimeout(() => {
                 oscillator.stop();
                 setTimeout(() => {
-                    beep(n - 1);
+                    beep(n - 1, context);
                 }, BEEP_SPACING_MS_REL);
             }, BEEP_DURATION_REL);
         };
@@ -455,7 +455,7 @@
                                 <p>P: Pause / Stop</p>
                                 <p>R: Reset</p>
                                 <p>S: Set Time</p>
-                                <p>B: Beep</p>
+                                    
                             </div>
                         </div>
                     </div>
