@@ -391,7 +391,7 @@
                 }
                 var startConfig = config.find(c => c.action === "START");
                 const totalTime = parseTimeString(startConfig.time);
-                this.setState({ elapsed: 0, totalTime: totalTime, timerAppearanceConfig: config, startTime: Date.now() });
+                this.setState({ elapsed: 0, totalTime: totalTime, timerAppearanceConfig: config, startTime: Date.now(), beeps:{} });
                 this.applyConfig();
             };
 
@@ -408,7 +408,7 @@
                 const newElapsed = this.state.totalTime - parsedTime
                 if (!isNaN(parsedTime)) {
                     console.log("New Time Set: " + parsedTime);
-                    this.setState({ elapsed: newElapsed, startTime: Date.now() - (newElapsed * 1000) });
+                    this.setState({ elapsed: newElapsed, startTime: Date.now() - (newElapsed * 1000), beeps:{}});
                     this.applyConfig();
                 }
             };
