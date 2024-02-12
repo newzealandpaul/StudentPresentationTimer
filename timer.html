@@ -8,6 +8,11 @@
     <meta name="description"
         content="The Student Presentation Timer is a simple HTML/JS countdown timer designed specifically for universities to monitor student presentations and ensure every student gets an equal speaking time.">
     <meta name="keywords" content="UC, timer, presentation, student, university, college, v0.3">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+
     <title>Student Presentation Countdown Timer</title>
 
     <style>
@@ -159,27 +164,28 @@
 
         // USER CONFIGURATION
 
-        const TIMER_CONFIGURATION = {
+        var TIMER_CONFIGURATION = {
             // Array of timer text configurations with background color, text color, and flashing state
             timerAppearanceConfig: [
-                { time: "START", backgroundColor: "black", textColor: "white", flashing: false },
-                { time: "01:00", backgroundColor: "black", textColor: "red", flashing: false },
-                { time: "00:10", backgroundColor: "black", textColor: "red", flashing: false }
+                { time: "10:00", action: "START", backgroundColor: "black", textColor: "white" },
+                { time: "01:00", backgroundColor: "black", textColor: "red" },
+                { time: "00:30", backgroundColor: "black", textColor: "red", beep: true },
+                { time: "00:00", backgroundColor: "black", textColor: "red", beep: true },
+                { time: "-01:00", action: "STOP", backgroundColor: "black", textColor: "red" }
             ],
-            defaultTime: "10:00", // DEFAULT_TIME - Default start time
-            stopTime: "-01:00",   // STOP_TIME - Default stop time, if null do not stop
+
+            questionAppearanceConfig: [
+                { time: "05:00", action: "START", backgroundColor: "black", textColor: "white" },
+                { time: "00:00", action: "STOP", backgroundColor: "black", textColor: "white" },
+            ],
+
             tickInterval: 1000,   // DEFAULT_TICK_INTERVAL - How often to update timer (in milliseconds)
 
             beepConfig: {
-                firstBeepTime: "00:30", // FIRST_BEEP_STRING - When the first beep sounds
-                constantBeepThreshold: "00:00", // CONSTANT_BEEP_THRESHOLD_STRING - Start beeping constantly at this threshold
-                constantBeepInterval: "00:10",  // CONSTANT_BEEP_INTERVAL - How often to beep past threshold
-                doubleBeepThreshold: "00:00",   // DOUBLE_BEEP_THRESHOLD - When to start double beeping
-
                 frequency: 493.88,     // BEEP_FREQ - Frequency of beep (Musical note G4)
                 waveType: 'sawtooth',  // BEEP_WAVE_TYPE - Type of wave used for beep
                 gain: 5,               // BEEP_GAIN - Volume of beep
-                durationMs: 500,       // BEEP_DURATION_MS - Duration of beep in milliseconds
+                durationMs: 180,       // BEEP_DURATION_MS - Duration of beep in milliseconds
                 spacingMs: 100,        // BEEP_SPACING_MS - Spacing between double beeps in milliseconds
                 beepsN: 2              // BEEPS_N - Number of beeps to play at constant threshold
             }
@@ -189,7 +195,7 @@
     <script type="text/javascript">
 
         // Parsing times, alert if invalid
-        function parseThreshold(thresholdString) {
+        function parseTimeString(thresholdString) {
             if (thresholdString == null) {
                 return NaN;
             }
@@ -214,16 +220,13 @@
             return seconds;
         }
 
-        const FIRST_BEEP_SECONDS = parseThreshold(TIMER_CONFIGURATION.beepConfig.firstBeepTime);
-        const CONSTANT_BEEP_THRESHOLD_SECONDS = parseThreshold(TIMER_CONFIGURATION.beepConfig.constantBeepThreshold);
-        const DOUBLE_BEEP_THRESHOLD_SECONDS = parseThreshold(TIMER_CONFIGURATION.beepConfig.doubleBeepThreshold);
-        const CONSTANT_BEEP_INTERVAL_SECONDS = parseThreshold(TIMER_CONFIGURATION.beepConfig.constantBeepInterval);
-        const STOP_TIME_SECONDS = parseThreshold(TIMER_CONFIGURATION.stopTime);
-
         // Get time from URL
         const params = new URLSearchParams(window.location.search);
         const timeFromUrl = params.get('time');
-        const timerInput = timeFromUrl ? timeFromUrl : TIMER_CONFIGURATION.defaultTime;
+        if (timeFromUrl != null) {
+            console.log("Time from URL: " + timeFromUrl);
+            TIMER_CONFIGURATION.timerAppearanceConfig[0].time = timeFromUrl;
+        }
 
         const tickFromURL = params.get('tick');
         const TICK_INTERVAL = tickFromURL ? parseInt(tickFromURL) : TIMER_CONFIGURATION.tickInterval;
@@ -232,12 +235,14 @@
         const REL_TICK = TICK_INTERVAL / 1000;
         const BEEP_SPACING_MS_REL = TIMER_CONFIGURATION.beepConfig.spacingMs * REL_TICK;
         const BEEP_DURATION_REL = TIMER_CONFIGURATION.beepConfig.durationMs * REL_TICK;
+        const BEEP_SAFETY_MS = 4;
 
-        function beep(n = 1, context = null) {
+        function audioBeep(n = 1, context = null) {
+            console.log("Beep: " + n);
             if (n == 0) return;
 
             // Rules for audio https://developer.chrome.com/blog/autoplay/#webaudio
-            if (context == null) {
+            if (context == null || context.state === 'suspended') {
                 console.log("Creating new Audio Context")
                 var audioContext = new (window.AudioContext || window.webkitAudioContext)();
             } else {
@@ -256,13 +261,22 @@
             oscillator.frequency.value = TIMER_CONFIGURATION.beepConfig.frequency // Musical note G4
             oscillator.type = TIMER_CONFIGURATION.beepConfig.waveType; // Sawtooth Wave
 
-            oscillator.start();
-            setTimeout(() => {
-                oscillator.stop();
+            if (audioContext.state === 'suspended') {
+                console.log("Audio Context is suspended");
+                return;
+            }
+            console.log("Audio Context: " + audioContext.state);
+
+            console.log("Beep Duration: " + BEEP_DURATION_REL);
+            oscillator.start(context.currentTime + BEEP_SAFETY_MS/1000);
+            oscillator.stop(context.currentTime + BEEP_SAFETY_MS/1000 + BEEP_DURATION_REL/1000);
+            
+            if (n > 1) {
                 setTimeout(() => {
-                    beep(n - 1, context);
-                }, BEEP_SPACING_MS_REL);
-            }, BEEP_DURATION_REL);
+                    audioBeep(n - 1, context);
+                }, BEEP_SAFETY_MS * 2 + BEEP_DURATION_REL + BEEP_SPACING_MS_REL);
+            }
+
         };
 
     </script>
@@ -270,41 +284,64 @@
 
         class Timer extends React.Component {
             constructor(props) {
-                const totalTime = parseThreshold(timerInput);
                 super(props);
                 this.state = {
-                    totalTime: totalTime,
-                    timeLeft: totalTime,
-                    elapsed: 0,
+                    totalTime: null, // Required
+                    elapsed: 0,      // Required
+                    fontColor: "white", // Required
+                    backgroundColor: "black", // Required
+                    timerAppearanceConfig: TIMER_CONFIGURATION.timerAppearanceConfig, // Required
+
                     running: false,
-                    fontColor: "white",
-                    backgroundColor: "black",
                     flashing: false,
-                    timeString: timerInput,
-                    audioContext: null
+                    audioContext: null,
                 };
             }
 
             applyConfig = () => {
-                const { timeLeft, elapsed } = this.state;
+                const { elapsed, timerAppearanceConfig } = this.state;
 
-                // If no time-specific configuration is found, use the "START" configuration (which is default)
-                if (elapsed == 0) {
-                    console.log("START config loaded");
-                    var config = TIMER_CONFIGURATION.timerAppearanceConfig.find(c => c.time === "START");
-                } else {
-                    var config = (
-                        TIMER_CONFIGURATION.timerAppearanceConfig.filter(c => c.time != "START")
-                            .find(c => parseThreshold(c.time) === timeLeft)
-                    );
-                }
+                var timeLeft = this.timeLeft();
+                var currentConfig = null;
 
-                if (config) {
-                    this.setState({
-                        textColor: config.textColor,
-                        backgroundColor: config.backgroundColor,
-                        flashing: config.flashing
-                    });
+                timerAppearanceConfig.forEach((config, i) => {
+                    if (config.action === "START") {
+                        if (!timeLeft) {
+                            timeLeft = parseTimeString(config.time) - elapsed;
+                            this.setState({
+                                totalTime: parseTimeString(config.time),
+                                timeLeft: timeLeft
+                            });
+                        }
+                        // console.log("Start Config: " + config.time);
+                        // console.log(config);
+                        currentConfig = config;
+                    }
+                    if (parseTimeString(config.time) >= timeLeft) {
+                        //console.log(config);
+                        //console.log(parseTimeString(config.time) + " >= " + timeLeft + " at " + i);
+                        currentConfig = config;
+                        
+                        //console.log("Applying Config: " + currentConfig.time + " " + currentConfig.backgroundColor + " " + currentConfig.textColor + " " + currentConfig.flashing);
+                        this.setState({
+                            textColor: currentConfig.textColor,
+                            backgroundColor: currentConfig.backgroundColor,
+                            flashing: currentConfig.flashing,
+                        });
+
+                    }
+                });
+
+                if (parseTimeString(currentConfig.time) === timeLeft) {
+                    if (currentConfig.beep) {
+                        this.createAudioContext();
+                        this.beep(1);
+                    }
+                    if (currentConfig.action === "STOP") {
+                        console.log("Stopping.")
+                        this.stopRunning();
+                    }
+
                 }
             };
 
@@ -329,34 +366,52 @@
                     this.resetTimer();
                 } else if (event.keyCode === 83) { // 'S' key
                     this.setCustomTime();
-                } else if (event.keyCode === 80) { // 'P' key
-                    this.stopRunning();
+                } else if (event.keyCode === 81) { // 'P' key
+                    this.questionTimer();
                 } else if (event.keyCode === 66) { // 'B' key
-                    if (this.state.audioContext == null) {
-                        this.createAudioContext();
-                    }
-                    beep(1, this.state.audioContext);
+                    this.createAudioContext();
+                    this.beep(1);
                 } else if (event.keyCode === 68) { // 'D' key, Hidden Double Beep
-                    if (this.state.audioContext == null) {
-                        this.createAudioContext();
-                    }
-                    beep(TIMER_CONFIGURATION.beepConfig.beepsN, this.state.audioContext);
+                    this.createAudioContext();
+                    this.beep(TIMER_CONFIGURATION.beepConfig.beepsN);
                 }
 
             };
 
-            resetTimer = () => {
+            resetTimer = (config = null) => {
+                console.log("Reset Timer");
                 this.stopRunning();
-                this.setState({ elapsed: 0, timeLeft: this.state.totalTime });
+                if (config != null) {
+                    this.setState({ timerAppearanceConfig: config });
+                } else {
+                    config = TIMER_CONFIGURATION.timerAppearanceConfig;
+                }
+                var startConfig = config.find(c => c.action === "START");
+                const totalTime = parseTimeString(startConfig.time);
+                this.setState({ elapsed: 0, totalTime: totalTime, timerAppearanceConfig: config });
+                this.applyConfig();
+            };
+
+            questionTimer = () => {
+                console.log("Question Timer");
+                this.resetTimer(TIMER_CONFIGURATION.questionAppearanceConfig);
+                this.resumeRunning();
             };
 
             setCustomTime = () => {
                 this.stopRunning();
-                let newTime = prompt("Enter the new time in format MM:SS", this.state.timeString);
-                let parsedTime = parseThreshold(newTime);
+                let newTime = prompt("Enter the new time in format MM:SS", "00:31");
+                let parsedTime = parseTimeString(newTime);
+                const newElapsed = this.state.totalTime - parsedTime
                 if (!isNaN(parsedTime)) {
-                    this.setState({ totalTime: parsedTime, timeLeft: parsedTime, elapsed: 0, timeString: newTime });
+                    console.log("New Time Set: " + parsedTime);
+                    this.setState({ elapsed: newElapsed });
+                    this.applyConfig();
                 }
+            };
+
+            timeLeft = () => {
+                return this.state.totalTime - this.state.elapsed;
             };
 
             tick = () => {
@@ -364,36 +419,26 @@
                     this.setState((prevState) => (
                         {
                             elapsed: prevState.elapsed + 1,
-                            timeLeft: prevState.totalTime - prevState.elapsed - 1
-
                         })
                     );
                     this.updateBeep();
                 }
                 this.applyConfig();
-
-                if (TIMER_CONFIGURATION.stopTime != null) {
-                    console.log("Time Left: " + this.state.timeLeft)
-                    if (this.state.timeLeft <= STOP_TIME_SECONDS) {
-                        console.log("Stopping Timer");
-                        this.stopRunning();
-                    }
-                }
-
             };
 
+            // For beeping at constant intervals
             updateBeep = () => {
-                const timeLeft = this.state.timeLeft;
-                console.debug(timeLeft);
-                if ((timeLeft <= CONSTANT_BEEP_THRESHOLD_SECONDS && timeLeft % CONSTANT_BEEP_INTERVAL_SECONDS === 0) || timeLeft === FIRST_BEEP_SECONDS) {
-                    if (timeLeft <= DOUBLE_BEEP_THRESHOLD_SECONDS) {
-                        console.debug("Double/N Beeps");
-                        beep(TIMER_CONFIGURATION.beepConfig.beepsN, this.state.audioContext);
-                    } else {
-                        console.debug("Single Beep");
-                        beep(1, this.state.audioContext);
-                    }
-                }
+                // const timeLeft = this.state.timeLeft;
+                // console.debug(timeLeft);
+                // if ((timeLeft <= CONSTANT_BEEP_THRESHOLD_SECONDS && timeLeft % CONSTANT_BEEP_INTERVAL_SECONDS === 0) || timeLeft === FIRST_BEEP_SECONDS) {
+                //     if (timeLeft <= DOUBLE_BEEP_THRESHOLD_SECONDS) {
+                //         console.debug("Double/N Beeps");
+                //         beep(TIMER_CONFIGURATION.beepConfig.beepsN, this.state.audioContext);
+                //     } else {
+                //         console.debug("Single Beep");
+                //         beep(1, this.state.audioContext);
+                //     }
+                // }
             };
 
             toggleRunning = () => {
@@ -410,29 +455,36 @@
             };
 
             resumeRunning = () => {
-                if (this.state.audioContext == null) {
-                    this.createAudioContext();
-                }
-
+                this.createAudioContext();
+                this.applyConfig()
                 this.setState({ running: true });
                 this.interval = setInterval(this.tick, TICK_INTERVAL);
             };
 
+            beep = (n = 1) => {
+                this.createAudioContext();
+                audioBeep(n, this.state.audioContext);
+            };
+
             createAudioContext = () => {
+                if (this.state.audioContext != null) {
+                    console.log("Audio Context already exists");
+                    return;
+                }
+
                 var audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 console.log("New Audio Context State: " + audioContext.state);
                 this.setState({ audioContext: audioContext });
             };
 
             render() {
-                const timeLeft = this.state.timeLeft;
+                const timeLeft = this.timeLeft();
                 const isRunning = this.state.running;
                 const absSeconds = Math.abs(timeLeft);
                 const minutes = Math.floor(absSeconds / 60);
                 const seconds = absSeconds % 60;
                 const secondsTime = seconds.toString().padStart(2, '0');
                 const minutesTime = minutes.toString().padStart(2, '0');
-                const separator = this.state.running ? ":" : ":"; // TODO: Alt separator for paused state
                 const sign = timeLeft < 0 ? "-" : "";
 
                 const timerStyle = {
@@ -446,16 +498,15 @@
                         <div id="timer">
                             <span id="sign">{sign}</span>
                             <span id="minute">{minutesTime}</span>
-                            <span id="separator" className={this.state.running ? 'running' : 'paused'}>{separator}</span>
+                            <span id="separator" className={this.state.running ? 'running' : 'paused'}>:</span>
                             <span id="second">{secondsTime}</span>
                         </div>
                         <div id="paused" style={{ display: !isRunning ? 'block' : 'none' }}>
                             <div id="keyboard-shortcuts">
                                 <p>Space / Click: Toggle Timer</p>
-                                <p>P: Pause / Stop</p>
                                 <p>R: Reset</p>
                                 <p>S: Set Time</p>
-                                    
+                                <p>Q: Questions</p>
                             </div>
                         </div>
                     </div>
