@@ -7,7 +7,7 @@
     <meta name="author" content="https://github.com/newzealandpaul/">
     <meta name="description"
         content="The Student Presentation Timer is a simple HTML/JS countdown timer designed specifically for universities to monitor student presentations and ensure every student gets an equal speaking time.">
-    <meta name="keywords" content="UC, timer, presentation, student, university, college, v0.6">
+    <meta name="keywords" content="UC, timer, presentation, student, university, college, v0.7">
 
     <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
@@ -268,9 +268,9 @@
             console.log("Audio Context: " + audioContext.state);
 
             console.log("Beep Duration: " + BEEP_DURATION_REL);
-            oscillator.start(context.currentTime + BEEP_SAFETY_MS/1000);
-            oscillator.stop(context.currentTime + BEEP_SAFETY_MS/1000 + BEEP_DURATION_REL/1000);
-            
+            oscillator.start(context.currentTime + BEEP_SAFETY_MS / 1000);
+            oscillator.stop(context.currentTime + BEEP_SAFETY_MS / 1000 + BEEP_DURATION_REL / 1000);
+
             if (n > 1) {
                 setTimeout(() => {
                     audioBeep(n - 1, context);
@@ -291,10 +291,12 @@
                     fontColor: "white", // Required
                     backgroundColor: "black", // Required
                     timerAppearanceConfig: TIMER_CONFIGURATION.timerAppearanceConfig, // Required
+                    startTime: null, // Required
 
                     running: false,
                     flashing: false,
                     audioContext: null,
+                    beeps: {}
                 };
             }
 
@@ -321,7 +323,7 @@
                         //console.log(config);
                         //console.log(parseTimeString(config.time) + " >= " + timeLeft + " at " + i);
                         currentConfig = config;
-                        
+
                         //console.log("Applying Config: " + currentConfig.time + " " + currentConfig.backgroundColor + " " + currentConfig.textColor + " " + currentConfig.flashing);
                         this.setState({
                             textColor: currentConfig.textColor,
@@ -347,6 +349,7 @@
 
             componentDidMount() {
                 this.applyConfig();
+                this.resetTimer();
                 document.addEventListener('click', this.toggleRunning);
                 document.addEventListener('keydown', this.handleKeyPress);
             }
@@ -388,7 +391,7 @@
                 }
                 var startConfig = config.find(c => c.action === "START");
                 const totalTime = parseTimeString(startConfig.time);
-                this.setState({ elapsed: 0, totalTime: totalTime, timerAppearanceConfig: config });
+                this.setState({ elapsed: 0, totalTime: totalTime, timerAppearanceConfig: config, startTime: Date.now() });
                 this.applyConfig();
             };
 
@@ -405,7 +408,7 @@
                 const newElapsed = this.state.totalTime - parsedTime
                 if (!isNaN(parsedTime)) {
                     console.log("New Time Set: " + parsedTime);
-                    this.setState({ elapsed: newElapsed });
+                    this.setState({ elapsed: newElapsed, startTime: Date.now() - (newElapsed * 1000) });
                     this.applyConfig();
                 }
             };
@@ -415,30 +418,17 @@
             };
 
             tick = () => {
+                // Calculate elapsed time since startTime
+                const diff = (((Date.now() - this.state.startTime) / TICK_INTERVAL) | 0);
+                console.log("Diff: " + diff);
                 if (this.state.running) {
                     this.setState((prevState) => (
                         {
-                            elapsed: prevState.elapsed + 1,
+                            elapsed: diff,
                         })
                     );
-                    this.updateBeep();
                 }
                 this.applyConfig();
-            };
-
-            // For beeping at constant intervals
-            updateBeep = () => {
-                // const timeLeft = this.state.timeLeft;
-                // console.debug(timeLeft);
-                // if ((timeLeft <= CONSTANT_BEEP_THRESHOLD_SECONDS && timeLeft % CONSTANT_BEEP_INTERVAL_SECONDS === 0) || timeLeft === FIRST_BEEP_SECONDS) {
-                //     if (timeLeft <= DOUBLE_BEEP_THRESHOLD_SECONDS) {
-                //         console.debug("Double/N Beeps");
-                //         beep(TIMER_CONFIGURATION.beepConfig.beepsN, this.state.audioContext);
-                //     } else {
-                //         console.debug("Single Beep");
-                //         beep(1, this.state.audioContext);
-                //     }
-                // }
             };
 
             toggleRunning = () => {
@@ -458,11 +448,20 @@
                 this.createAudioContext();
                 this.applyConfig()
                 this.setState({ running: true });
-                this.interval = setInterval(this.tick, TICK_INTERVAL);
+                this.interval = setInterval(this.tick, TICK_INTERVAL / 2);
             };
 
             beep = (n = 1) => {
                 this.createAudioContext();
+                const elapsed = this.state.elapsed;
+                if (this.state.beeps[elapsed]) {
+                    console.log("Beep already played at " + this.state.elapsed);
+                    return;
+                } else {
+                    this.setState(prevState => ({
+                        beeps: { ...prevState.beeps, [elapsed]: true }
+                    }));
+                }
                 audioBeep(n, this.state.audioContext);
             };
 
